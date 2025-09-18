@@ -1,4 +1,4 @@
-'''
+
 import 'package:flutter/material.dart';
 import 'chat_models.dart';
 import 'screens/chat_screen.dart';
@@ -40,9 +40,6 @@ final _router = GoRouter(
       builder: (context, state) {
         final id = state.pathParameters['id']!;
         final chat = Provider.of<ChatService>(context, listen: false).getChatById(id);
-        // Ensure we pass a valid chat object, or handle the case where it might be null
-        // For simplicity, we're assuming getChatById always returns a valid chat for the given id.
-        // In a real app, you might want to show a not-found page.
         return ChatScreen(chat: chat);
       },
     ),
@@ -213,4 +210,3 @@ class ChatService {
     return _chats.firstWhere((chat) => chat.id == id);
   }
 }
-''
