@@ -1,19 +1,8 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import '../chat_models.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:allconnect/chat_models.dart';
-
-// A model for individual messages
-class Message {
-  final String text;
-  final String time;
-  final bool isSentByMe;
-
-  Message({
-    required this.text,
-    required this.time,
-    required this.isSentByMe,
-  });
-}
 
 class ChatScreen extends StatefulWidget {
   final Chat chat;
@@ -25,222 +14,155 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final ScrollController _scrollController = ScrollController();
-  final TextEditingController _textController = TextEditingController();
-
-  // Dummy list of messages
-  final List<Message> _messages = [
-    Message(text: 'Hey! How have you been?', time: '10:40', isSentByMe: false),
-    Message(text: 'I\'ve been great, thanks! Just finishing up some work. You?', time: '10:41', isSentByMe: true),
-    Message(text: 'Same here. Just wanted to check in.', time: '10:41', isSentByMe: false),
-    Message(text: 'Cool! We should catch up sometime next week.', time: '10:42', isSentByMe: false),
-    Message(text: 'Definitely! Sounds like a plan. I\'ll text you.', time: '10:43', isSentByMe: true),
-  ];
+  final TextEditingController _controller = TextEditingController();
+  final List<Message> _messages = [];
 
   @override
-  void dispose() {
-    _textController.dispose();
-    _scrollController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    // Simulate loading initial messages
+    _messages.addAll([
+      Message(
+          sender: 'other', text: 'Я скоро буду дома. Купи, пожалуйста, хлеб.', time: '18:32'),
+      Message(sender: 'me', text: 'Хорошо, куплю', time: '18:33'),
+      Message(sender: 'other', text: 'Спасибо! ❤️', time: '18:33'),
+    ]);
   }
 
-  void _handleSendPressed() {
-    final text = _textController.text;
-    if (text.isEmpty) {
-      return;
+  void _sendMessage() {
+    if (_controller.text.isNotEmpty) {
+      setState(() {
+        _messages.add(Message(sender: 'me', text: _controller.text, time: '18:35'));
+        _controller.clear();
+      });
+      // Simulate receiving a reply
+      Future.delayed(const Duration(seconds: 1), () {
+        setState(() {
+          _messages.add(
+              Message(sender: 'other', text: 'Поняла, жду', time: '18:36'));
+        });
+      });
     }
-
-    final message = Message(
-      text: text,
-      time: '${DateTime.now().hour}:${DateTime.now().minute.toString().padLeft(2, '0')}',
-      isSentByMe: true,
-    );
-
-    setState(() {
-      _messages.add(message);
-    });
-
-    _textController.clear();
-
-    // Scroll to the bottom of the list after a short delay
-    Future.delayed(const Duration(milliseconds: 50), () {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         title: Row(
           children: [
             CircleAvatar(
               backgroundImage: NetworkImage(widget.chat.avatarUrl),
-              radius: 20,
             ),
             const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  widget.chat.name,
-                  style: GoogleFonts.lato(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).appBarTheme.foregroundColor,
-                  ),
-                ),
-                Text(
-                  'online',
-                  style: GoogleFonts.lato(
-                    fontSize: 13,
-                    color: (Theme.of(context).appBarTheme.foregroundColor ?? Colors.white).withOpacity(0.8),
-                  ),
-                ),
+                Text(widget.chat.name, style: theme.textTheme.titleLarge),
+                Text('был(а) недавно', style: theme.textTheme.bodyMedium?.copyWith(fontSize: 13)),
               ],
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.videocam_outlined),
+            icon: const Icon(Icons.call, color: Colors.white, size: 26),
             onPressed: () {},
           ),
           IconButton(
-            icon: const Icon(Icons.more_vert),
+            icon: const Icon(Icons.more_vert, color: Colors.white, size: 28),
             onPressed: () {},
           ),
         ],
-        elevation: 1,
+        elevation: 0,
       ),
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
-              controller: _scrollController,
               padding: const EdgeInsets.all(10.0),
+              reverse: false, // To show latest messages at the bottom
               itemCount: _messages.length,
               itemBuilder: (context, index) {
-                return _buildMessage(_messages[index], context);
+                final message = _messages[index];
+                final isMe = message.sender == 'me';
+
+                return Align(
+                  alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: isMe
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.surface,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      message.text,
+                      style: theme.textTheme.bodyMedium?.copyWith(color: Colors.white),
+                    ),
+                  ),
+                );
               },
             ),
           ),
-          _buildMessageComposer(),
+          _buildMessageComposer(theme),
         ],
       ),
     );
   }
 
-  // Builds a single message bubble
-  Widget _buildMessage(Message message, BuildContext context) {
-    final align = message.isSentByMe ? MainAxisAlignment.end : MainAxisAlignment.start;
-    final color = message.isSentByMe
-        ? Theme.of(context).colorScheme.primaryContainer
-        : Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.5);
-    final textColor = Theme.of(context).colorScheme.onSurface;
-
-    final bubble = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(20),
-          topRight: const Radius.circular(20),
-          bottomLeft: message.isSentByMe ? const Radius.circular(20) : Radius.zero,
-          bottomRight: message.isSentByMe ? Radius.zero : const Radius.circular(20),
-        ),
-      ),
-      child: Text(
-        message.text,
-        style: GoogleFonts.lato(fontSize: 16, color: textColor),
-      ),
-    );
-
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: align,
-        children: [
-          Container(
-            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-            child: Column(
-              crossAxisAlignment: message.isSentByMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+  Widget _buildMessageComposer(ThemeData theme) {
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+          decoration: BoxDecoration(
+            color: theme.appBarTheme.backgroundColor?.withOpacity(0.8),
+            border: const Border(top: BorderSide(color: Colors.black26, width: 0.5)),
+          ),
+          child: SafeArea(
+            child: Row(
               children: [
-                bubble,
-                const SizedBox(height: 4),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Text(
-                    message.time,
-                    style: GoogleFonts.lato(color: Colors.grey, fontSize: 12),
+                IconButton(
+                  icon: const Icon(Icons.add, color: Colors.white, size: 30),
+                  onPressed: () {},
+                ),
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: theme.scaffoldBackgroundColor,
+                      borderRadius: BorderRadius.circular(25.0),
+                    ),
+                    child: TextField(
+                      controller: _controller,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'Сообщение',
+                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20.0, vertical: 10.0),
+                      ),
+                    ),
                   ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.send, color: Colors.white, size: 28),
+                  onPressed: _sendMessage,
                 ),
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  // Builds the text input field at the bottom
-  Widget _buildMessageComposer() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        boxShadow: [
-          BoxShadow(
-            offset: const Offset(0, -1),
-            blurRadius: 3,
-            color: Colors.black.withOpacity(0.05),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Row(
-          children: <Widget>[
-            IconButton(
-              icon: const Icon(Icons.attach_file),
-              onPressed: () {},
-            ),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 15),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
-                  borderRadius: BorderRadius.circular(25.0),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _textController,
-                        onSubmitted: (value) => _handleSendPressed(),
-                        decoration: const InputDecoration.collapsed(
-                          hintText: 'Message...',
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.sentiment_satisfied_alt_outlined),
-                      onPressed: () {},
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            FloatingActionButton(
-              mini: true,
-              onPressed: _handleSendPressed,
-              child: const Icon(Icons.send),
-            ),
-          ],
         ),
       ),
     );

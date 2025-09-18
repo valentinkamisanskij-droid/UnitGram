@@ -1,14 +1,13 @@
-
-import 'package:allconnect/chat_models.dart';
-import 'package:allconnect/screens/chat_screen.dart';
-import 'package:allconnect/widgets/chat_list_item.dart';
+'''
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'chat_models.dart';
+import 'screens/chat_screen.dart';
+import 'widgets/chat_list_item.dart';
+import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
-// --- Main Entry Point ---
 void main() {
   runApp(
     ChangeNotifierProvider(
@@ -18,9 +17,8 @@ void main() {
   );
 }
 
-// --- Theme Management ---
 class ThemeProvider with ChangeNotifier {
-  ThemeMode _themeMode = ThemeMode.system;
+  ThemeMode _themeMode = ThemeMode.light;
 
   ThemeMode get themeMode => _themeMode;
 
@@ -31,209 +29,112 @@ class ThemeProvider with ChangeNotifier {
   }
 }
 
-// --- Router Configuration ---
 final _router = GoRouter(
-  initialLocation: '/chats',
   routes: [
-    // This ShellRoute builds the UI with the BottomNavigationBar
-    ShellRoute(
-      builder: (context, state, child) {
-        return ScaffoldWithNavBar(child: child);
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const ChatsScreen(),
+    ),
+    GoRoute(
+      path: '/chat/:id',
+      builder: (context, state) {
+        final id = state.pathParameters['id']!;
+        final chat = Provider.of<ChatService>(context, listen: false).getChatById(id);
+        // Ensure we pass a valid chat object, or handle the case where it might be null
+        // For simplicity, we're assuming getChatById always returns a valid chat for the given id.
+        // In a real app, you might want to show a not-found page.
+        return ChatScreen(chat: chat);
       },
-      routes: [
-        GoRoute(
-          path: '/chats',
-          builder: (context, state) => const ChatsScreen(),
-          routes: [
-            GoRoute(
-              path: 'chat', // Corresponds to '/chats/chat'
-              builder: (context, state) {
-                final chat = state.extra as Chat?;
-                if (chat != null) {
-                  return ChatScreen(chat: chat);
-                }
-                // Return a fallback screen or an error screen if chat is null
-                return const Center(child: Text('Chat not found'));
-              },
-            ),
-          ],
-        ),
-        GoRoute(
-          path: '/channels',
-          builder: (context, state) => const ChannelsScreen(),
-        ),
-        GoRoute(
-          path: '/profile',
-          builder: (context, state) => const ProfileScreen(),
-        ),
-      ],
     ),
   ],
 );
 
-// --- Root Application Widget ---
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const Color primarySeedColor = Colors.blueAccent;
+    const Color primarySeedColor = Color(0xFF005FFF); // A vibrant blue
 
-    // Define a common TextTheme using Google Fonts
     final TextTheme appTextTheme = TextTheme(
-      displayLarge: GoogleFonts.oswald(fontSize: 57, fontWeight: FontWeight.bold),
-      titleLarge: GoogleFonts.roboto(fontSize: 22, fontWeight: FontWeight.w500),
-      bodyMedium: GoogleFonts.openSans(fontSize: 14),
-      labelLarge: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.bold),
+      displayLarge: GoogleFonts.poppins(
+          fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+      titleLarge: GoogleFonts.poppins(
+          fontSize: 22, fontWeight: FontWeight.w600, color: Colors.white),
+      bodyMedium: GoogleFonts.poppins(
+          fontSize: 15,
+          fontWeight: FontWeight.normal,
+          color: Colors.white.withOpacity(0.8)),
+      labelMedium: GoogleFonts.poppins(
+          fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
     );
 
-    // Light Theme
-    final ThemeData lightTheme = ThemeData(
+    final ThemeData baseTheme = ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primarySeedColor,
-        brightness: Brightness.light,
-      ),
-      textTheme: appTextTheme,
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: const Color(0xFF001029),
       appBarTheme: AppBarTheme(
-        backgroundColor: primarySeedColor,
-        foregroundColor: Colors.white,
-        titleTextStyle: GoogleFonts.oswald(fontSize: 24, fontWeight: FontWeight.bold),
+        backgroundColor: const Color(0xFF001F4D),
+        elevation: 0,
+        titleTextStyle: appTextTheme.titleLarge,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: primarySeedColor,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          textStyle: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w500),
-        ),
-      ),
-    );
-
-    // Dark Theme
-    final ThemeData darkTheme = ThemeData(
-      useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primarySeedColor,
         brightness: Brightness.dark,
-        background: Colors.grey[900],
+        primary: primarySeedColor,
+        onPrimary: Colors.white,
+        surface: const Color(0xFF001F4D),
+        onSurface: Colors.white,
+        surfaceContainerHighest: const Color(0xFF001F4D),
       ),
       textTheme: appTextTheme,
-      appBarTheme: AppBarTheme(
-        backgroundColor: Colors.grey[850],
-        foregroundColor: Colors.white,
-        titleTextStyle: GoogleFonts.oswald(fontSize: 24, fontWeight: FontWeight.bold),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: primarySeedColor,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          textStyle: GoogleFonts.roboto(fontSize: 16, fontWeight: FontWeight.w500),
-        ),
-      ),
     );
 
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return MaterialApp.router(
-          title: 'AllConnect',
-          theme: lightTheme,
-          darkTheme: darkTheme,
-          themeMode: themeProvider.themeMode,
-          routerConfig: _router,
-          debugShowCheckedModeBanner: false,
-        );
-      },
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        Provider(create: (_) => ChatService()),
+      ],
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp.router(
+            title: 'UnitGram',
+            theme: baseTheme,
+            darkTheme: baseTheme,
+            themeMode: themeProvider.themeMode,
+            routerConfig: _router,
+            debugShowCheckedModeBanner: false,
+          );
+        },
+      ),
     );
   }
 }
 
-// --- Scaffold with Bottom Navigation Bar ---
-class ScaffoldWithNavBar extends StatelessWidget {
-  const ScaffoldWithNavBar({required this.child, super.key});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: child,
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            activeIcon: Icon(Icons.chat_bubble),
-            label: 'Chats',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.group_work_outlined),
-            activeIcon: Icon(Icons.group_work),
-            label: 'Channels',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-        currentIndex: _calculateSelectedIndex(context),
-        onTap: (int idx) => _onItemTapped(idx, context),
-      ),
-    );
-  }
-
-  static int _calculateSelectedIndex(BuildContext context) {
-    final String location = GoRouterState.of(context).uri.toString();
-    if (location.startsWith('/channels')) {
-      return 1;
-    }
-    if (location.startsWith('/profile')) {
-      return 2;
-    }
-    return 0; // Default to chats
-  }
-
-  void _onItemTapped(int index, BuildContext context) {
-    switch (index) {
-      case 0:
-        GoRouter.of(context).go('/chats');
-        break;
-      case 1:
-        GoRouter.of(context).go('/channels');
-        break;
-      case 2:
-        GoRouter.of(context).go('/profile');
-        break;
-    }
-  }
-}
-
-
-// --- Placeholder Screens ---
 class ChatsScreen extends StatelessWidget {
   const ChatsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Dummy data for chats
-    final List<Chat> chats = [
-      Chat(name: 'Alice', message: 'Hey, how are you?', time: '10:30 AM', avatarUrl: 'https://i.pravatar.cc/150?img=1', unreadCount: 2),
-      Chat(name: 'Bob', message: 'Meeting at 2 PM', time: '9:45 AM', avatarUrl: 'https://i.pravatar.cc/150?img=2', unreadCount: 0),
-      Chat(name: 'Charlie', message: 'See you tomorrow!', time: 'Yesterday', avatarUrl: 'https://i.pravatar.cc/150?img=3', unreadCount: 1),
-      Chat(name: 'David', message: 'Thanks for the help!', time: 'Yesterday', avatarUrl: 'https://i.pravatar.cc/150?img=4', unreadCount: 0),
-      Chat(name: 'Eve', message: 'Can you send me the file?', time: '2 days ago', avatarUrl: 'https://i.pravatar.cc/150?img=5', unreadCount: 0),
-    ];
+    final chatService = Provider.of<ChatService>(context);
+    final chats = chatService.getChats();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chats'),
+        title: Text('Чаты', style: Theme.of(context).textTheme.displayLarge),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: const Icon(Icons.search, size: 28),
             onPressed: () {},
-            tooltip: 'Search Chats',
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: IconButton(
+              icon: const Icon(Icons.more_vert, size: 28),
+              onPressed: () {},
+            ),
           ),
         ],
       ),
@@ -248,73 +149,68 @@ class ChatsScreen extends StatelessWidget {
               child: SlideAnimation(
                 verticalOffset: 50.0,
                 child: FadeInAnimation(
-                  child: ChatListItem(chat: chat),
+                  child: ChatListItem(
+                    chat: chat,
+                    onTap: () => context.go('/chat/${chat.id}'),
+                  ),
                 ),
               ),
             );
           },
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        tooltip: 'New Chat',
-        child: const Icon(Icons.add),
-      ),
     );
   }
 }
 
+class ChatService {
+  final List<Chat> _chats = [
+    Chat(
+      id: '1',
+      name: 'Мама',
+      lastMessage: 'Я скоро буду дома. Купи, пожалуйста, хлеб.',
+      avatarUrl: 'https://i.pravatar.cc/150?img=1',
+      time: '18:32',
+      unreadCount: 2,
+    ),
+    Chat(
+      id: '2',
+      name: 'Лиза',
+      lastMessage: 'Привет! Как дела? Что нового?',
+      avatarUrl: 'https://i.pravatar.cc/150?img=5',
+      time: '17:15',
+      unreadCount: 0,
+    ),
+    Chat(
+      id: '3',
+      name: 'Работа',
+      lastMessage: 'Коллеги, завтра совещание в 10:00.',
+      avatarUrl: 'https://i.pravatar.cc/150?img=10',
+      time: '14:30',
+      unreadCount: 5,
+    ),
+    Chat(
+      id: '4',
+      name: 'Лучший друг',
+      lastMessage: 'Го в футбол вечером?',
+      avatarUrl: 'https://i.pravatar.cc/150?img=3',
+      time: 'Вчера',
+      unreadCount: 0,
+    ),
+    Chat(
+      id: '5',
+      name: 'Универ',
+      lastMessage: 'Напоминаю о сдаче курсовой работы до конца недели.',
+      avatarUrl: 'https://i.pravatar.cc/150?img=12',
+      time: 'Вчера',
+      unreadCount: 1,
+    ),
+  ];
 
-class ChannelsScreen extends StatelessWidget {
-  const ChannelsScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Channels'),
-      ),
-      body: Center(
-        child: Text(
-          'Discover and join channels.',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      ),
-    );
+  List<Chat> getChats() => _chats;
+
+  Chat getChatById(String id) {
+    return _chats.firstWhere((chat) => chat.id == id);
   }
 }
-
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircleAvatar(
-              radius: 50,
-              child: Icon(Icons.person, size: 50),
-            ),
-            const SizedBox(height: 20),
-            Text('Your Name', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 40),
-            ElevatedButton.icon(
-              onPressed: () => themeProvider.toggleTheme(),
-              icon: Icon(
-                themeProvider.themeMode == ThemeMode.dark
-                    ? Icons.light_mode
-                    : Icons.dark_mode,
-              ),
-              label: const Text('Toggle Theme'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+''
