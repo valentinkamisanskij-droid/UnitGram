@@ -21,7 +21,7 @@ class ChatListItem extends StatelessWidget {
           child: Row(
             children: [
               CircleAvatar(
-                backgroundImage: NetworkImage(chat.avatarUrl),
+                backgroundImage: AssetImage(chat.avatarUrl),
                 radius: 30,
               ),
               const SizedBox(width: 16),

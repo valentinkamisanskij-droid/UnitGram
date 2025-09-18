@@ -10,8 +10,11 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => ThemeProvider()),
+        Provider(create: (context) => ChatService()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -29,29 +32,28 @@ class ThemeProvider with ChangeNotifier {
   }
 }
 
-final _router = GoRouter(
-  routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const ChatsScreen(),
-    ),
-    GoRoute(
-      path: '/chat/:id',
-      builder: (context, state) {
-        final id = state.pathParameters['id']!;
-        final chat = Provider.of<ChatService>(context, listen: false).getChatById(id);
-        return ChatScreen(chat: chat);
-      },
-    ),
-  ],
-);
-
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final _router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const ChatsScreen(),
+        ),
+        GoRoute(
+          path: '/chat/:id',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            final chat = Provider.of<ChatService>(context, listen: false).getChatById(id);
+            return ChatScreen(chat: chat);
+          },
+        ),
+      ],
+    );
+
     const Color primarySeedColor = Color(0xFF005FFF); // A vibrant blue
 
     final TextTheme appTextTheme = TextTheme(
@@ -89,23 +91,17 @@ class MyApp extends StatelessWidget {
       textTheme: appTextTheme,
     );
 
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        Provider(create: (_) => ChatService()),
-      ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, child) {
-          return MaterialApp.router(
-            title: 'UnitGram',
-            theme: baseTheme,
-            darkTheme: baseTheme,
-            themeMode: themeProvider.themeMode,
-            routerConfig: _router,
-            debugShowCheckedModeBanner: false,
-          );
-        },
-      ),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp.router(
+          title: 'UnitGram',
+          theme: baseTheme,
+          darkTheme: baseTheme,
+          themeMode: themeProvider.themeMode,
+          routerConfig: _router,
+          debugShowCheckedModeBanner: false,
+        );
+      },
     );
   }
 }
@@ -166,7 +162,7 @@ class ChatService {
       id: '1',
       name: 'Мама',
       lastMessage: 'Я скоро буду дома. Купи, пожалуйста, хлеб.',
-      avatarUrl: 'https://i.pravatar.cc/150?img=1',
+      avatarUrl: 'assets/images/placeholder_1.png',
       time: '18:32',
       unreadCount: 2,
     ),
@@ -174,7 +170,7 @@ class ChatService {
       id: '2',
       name: 'Лиза',
       lastMessage: 'Привет! Как дела? Что нового?',
-      avatarUrl: 'https://i.pravatar.cc/150?img=5',
+      avatarUrl: 'assets/images/placeholder_2.png',
       time: '17:15',
       unreadCount: 0,
     ),
@@ -182,7 +178,7 @@ class ChatService {
       id: '3',
       name: 'Работа',
       lastMessage: 'Коллеги, завтра совещание в 10:00.',
-      avatarUrl: 'https://i.pravatar.cc/150?img=10',
+      avatarUrl: 'assets/images/placeholder_3.png',
       time: '14:30',
       unreadCount: 5,
     ),
@@ -190,7 +186,7 @@ class ChatService {
       id: '4',
       name: 'Лучший друг',
       lastMessage: 'Го в футбол вечером?',
-      avatarUrl: 'https://i.pravatar.cc/150?img=3',
+      avatarUrl: 'assets/images/placeholder_4.png',
       time: 'Вчера',
       unreadCount: 0,
     ),
@@ -198,7 +194,7 @@ class ChatService {
       id: '5',
       name: 'Универ',
       lastMessage: 'Напоминаю о сдаче курсовой работы до конца недели.',
-      avatarUrl: 'https://i.pravatar.cc/150?img=12',
+      avatarUrl: 'assets/images/placeholder_5.png',
       time: 'Вчера',
       unreadCount: 1,
     ),
